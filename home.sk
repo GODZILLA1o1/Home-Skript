@@ -1,0 +1,90 @@
+# =====================================================
+# Skript by GODZILLA1o1
+# Do NOT claim this Skript as your own.
+# Feel free to use and modify, but give proper credit!
+# =====================================================
+
+# Configurable maximum number of homes a player can set
+options:
+  maxHomes: 3 # Change this number to whatever limit you want
+  teleportDelay: 3 # Change this number to adjust teleport delay in seconds
+
+# Home Skript with /sethome, /home, /delhome, and customizable teleport delay
+
+# Set home command
+command /sethome:
+    description: Set your home location
+    usage: /sethome
+    trigger:
+        # Get the current number of homes the player has set
+        set {_homeCount} to size of {home.%player%::*}
+        
+        # Check if the player has reached the max home limit
+        if {_homeCount} >= {@maxHomes}:
+            send "&7[&aHome&7] &cYou cannot set more than {@maxHomes} homes. Please delete a home first."
+        else:
+            # Set the new home and increase the index by 1
+            set {home.%player%.%{_homeCount}+1%} to location of player
+            send "&7[&aHome&7] &aYour home has been set! You now have %{_homeCount}+1% home(s)."
+
+# Home teleport command with customizable teleport delay and movement check
+command /home <text>:
+    description: Teleport to your home with a delay
+    usage: /home <homeName>
+    trigger:
+        # Ensure argument 1 is set before proceeding
+        if arg 1 is not set:
+            send "&7[&aHome&7] &cPlease specify a home name to teleport to."
+            stop
+
+        # Check if the home exists
+        if {home.%player%.%arg 1%} is not set:
+            send "&7[&aHome&7] &cHome '&f%arg 1%&c' not found!"
+            stop
+
+        send "&7[&aHome&7] &eTeleporting to home '&f%arg 1%&e' in {@teleportDelay} seconds... Move to cancel."
+        
+        # Store initial location to check if the player moves
+        set {_initialLocation} to location of player
+        wait {@teleportDelay} seconds
+
+        # If the player moved, cancel teleport
+        if location of player is not {_initialLocation}:
+            send "&7[&aHome&7] &cTeleportation canceled (you moved)."
+        else:
+            teleport player to {home.%player%.%arg 1%}
+            send "&7[&aHome&7] &aYou have been teleported to home '&f%arg 1%&a'."
+
+# Delete home command
+command /delhome <text>:
+    description: Delete a saved home location
+    usage: /delhome <homeName>
+    trigger:
+        # Ensure argument 1 is set before proceeding
+        if arg 1 is not set:
+            send "&7[&aHome&7] &cPlease specify a home name to delete."
+            stop
+
+        # Check if the home exists
+        if {home.%player%.%arg 1%} is not set:
+            send "&7[&aHome&7] &cHome '&f%arg 1%&c' not found!"
+            stop
+
+        # Delete the home
+        delete {home.%player%.%arg 1%}
+        send "&7[&aHome&7] &cHome '&f%arg 1%&c' has been deleted!"
+
+# List all set homes (optional)
+command /homes:
+    description: List all of your set homes
+    usage: /homes
+    trigger:
+        set {_homeCount} to size of {home.%player%::*}
+        
+        if {_homeCount} is 0:
+            send "&7[&aHome&7] &cYou have no homes set. Use /sethome to set a home."
+            stop
+
+        send "&7[&aHome&7] &eYou have %{_homeCount}% home(s) set:"
+        loop {home.%player%::*}:
+            send "&7- &f%loop-value%"
